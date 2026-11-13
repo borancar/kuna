@@ -5371,7 +5371,7 @@ fn a_float_and_integer_union_field_round_trips_through_the_printed_c() {
     ]);
     assert!(ok, "kuna decompile-all failed: {stderr}");
     assert!(stdout.contains("char field_0x8[8];"), "{stdout}");
-    assert!(stdout.contains("return *(double *)a0->field_0x8;"), "{stdout}");
+    assert!(stdout.contains("return *(double *)&a0->field_0x8;"), "{stdout}");
 
     if process::optional_output(Command::new("cc").arg("--version")).is_none() {
         eprintln!("unionfield round trip: no `cc`, spelling checked only");

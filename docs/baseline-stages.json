@@ -1,7 +1,7 @@
 {
   "data_footer": [
-    4047,
-    4047
+    4051,
+    4051
   ],
   "passing": [
     "data:64-bit logical shift retains unsigned destination",
@@ -95,6 +95,10 @@
     "data:ARRAYEXTENT #7: off splits the masked array's last four elements, both compilers",
     "data:ARRAYEXTENT #8: struct fields read after the array escapes stay scalars, both compilers, every pass",
     "data:ARRAYEXTENT #9: two adjacent indexed arrays stay two arrays in every pass",
+    "data:ARRAYFIELDCAST #1: the double read takes the field's address",
+    "data:ARRAYFIELDCAST #2: so do the integer and float reads",
+    "data:ARRAYFIELDCAST #3: no cast reads the decayed field",
+    "data:ARRAYFIELDCAST #4: a byte of the field is still an element",
     "data:ARRAYSIZE #10: line_len's fgets in both passes",
     "data:ARRAYSIZE #11: link_len's readlink in both passes",
     "data:ARRAYSIZE #12: fortified's __snprintf_chk in both passes",

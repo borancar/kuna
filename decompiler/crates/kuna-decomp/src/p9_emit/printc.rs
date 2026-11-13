@@ -11180,6 +11180,20 @@ impl PrintC {
     }
 
     fn op_ptrsub_ir(&mut self, fd: &Funcdata, arch: &Architecture, op: OpId) {
+        /// Whether the PTRSUB's address is cast to a pointer to a scalar wider than
+        /// the array field's element, reading several elements as one value.
+        fn reinterpreting_cast(fd: &Funcdata, op: OpId, field: &crate::dtype::Datatype) -> bool {
+            let Some(out) = fd.obank().get(op).and_then(|o| o.get_out()) else { return false };
+            let Some(cast) = fd.lone_descend(out) else { return false };
+            let Some(cast_op) = fd.obank().get(cast).filter(|o| o.code() == OpCode::CPUI_CAST) else { return false };
+            let Some(target) = cast_op.get_out().map(|v| fd.vn_type_def_facing(v)) else { return false };
+            let Some(pointee) = target.get_ptr_to() else { return false };
+            if pointee.get_metatype() == crate::dtype::type_metatype::TYPE_ARRAY {
+                return false;
+            }
+            field.get_array_base().is_some_and(|elem| pointee.get_size() > elem.get_size())
+        }
+
         let in0 = match fd.obank().get(op).and_then(|o| o.get_in(0)) {
             Some(v) => v,
             None => return,
@@ -11297,11 +11311,14 @@ impl PrintC {
                     }
                 };
             let mut arrayvalue = false;
-            // The '&' is dropped if the field is an array.
+            // The '&' is dropped if the field is an array, unless a cast reads
+            // the array's bytes as another type.
             if let Some(ft) = &fieldtype {
                 if ft.get_metatype() == crate::dtype::type_metatype::TYPE_ARRAY {
                     arrayvalue = valueon; // If printing value, use [0]
-                    valueon = true; // Don't print &
+                    valueon = valueon
+                        || self.out_lang != crate::kuna_lang::OutLang::C
+                        || !reinterpreting_cast(fd, op, ft);
                 }
             }
             let field_atom = Atom::field(

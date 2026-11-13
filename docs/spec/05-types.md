@@ -1978,7 +1978,12 @@ value conversion of bits the binary reinterprets; typed `double`, the same field
 read by `cvtsi2sdq` prints `(double)(long)a0->field_0x8`, the conversion the other
 way. So a field whose accesses of its width carry a float and a non-float is raw
 bytes, `undefined1 field_0x<hex>[N]` like the filler of a gap, and every read of
-it casts the address: `*(double *)a0->field_0x8`, `(double)*(long *)a0->field_0x8`.
+it casts the address: `*(double *)&a0->field_0x8`, `(double)*(long *)&a0->field_0x8`.
+The `&` is printed although the array would decay without it, because a cast
+from the decayed array reads as a load through a pointer the field holds. It is
+printed only where the cast's pointee is a scalar wider than the array's element;
+a byte pointer into the field (`(char *)a0->field_0x8`) and a pointer-to-array
+cast, which takes the address itself, are unchanged.
 The value classes of every access of the field's width are accumulated rather
 than compared pair by pair, so a sign contest that already cleared the type cannot
 hide a later float (`Slot::reinterpreted`). A narrower access is not the field's

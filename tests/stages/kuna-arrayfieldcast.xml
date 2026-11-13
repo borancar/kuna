@@ -1,0 +1,41 @@
+<decompilertest>
+<binaryimage arch="x86:LE:64:default:gcc">
+<!--
+    kuna issue testcase: a cast that reads a raw-bytes field as one value
+    takes the field's address with `&`.
+
+    Issue:      kuna GH-ISSUE - `fstp DWORD PTR [esi+0x170]` printed as
+                `*(float *)a0->field_0x170 = ...`, which reads as a store
+                through a pointer loaded from the field.
+    Stage:      P9 emit - PrintC::opPtrsub's array-field arm
+                (`p9_emit/printc.rs`).
+
+    A field whose accesses read it both as a float and as an integer is raw
+    bytes (`char field_0x8[8]`, spec 05-types). Without the `&` the array
+    decays, which is valid C, but a reader without the structure declaration
+    sees a load through the field. Only a cast to a scalar wider than the
+    element takes the `&`; an element access is unchanged.
+
+    Fixture: decompiler/crates/kuna-analysis/tests/fixtures/unionfield_fp_x86_64,
+    vread, which reads the same 8-byte field as a double, a long, an int, a
+    float and a byte.
+-->
+<bytechunk space="ram" offset="0x100000" readonly="true">
+c3
+</bytechunk>
+<symbol space="ram" offset="0x100000" name="harness_stub"/>
+</binaryimage>
+<script>
+  <com>clear architecture</com>
+  <com>load file decompiler/crates/kuna-analysis/tests/fixtures/unionfield_fp_x86_64</com>
+  <com>read symbols</com>
+  <com>load function vread</com>
+  <com>decompile</com>
+  <com>print C</com>
+  <com>quit</com>
+</script>
+<stringmatch name="ARRAYFIELDCAST #1: the double read takes the field's address" min="1" max="1">return \*\(float8 \*\)&amp;a0->field_0x8;</stringmatch>
+<stringmatch name="ARRAYFIELDCAST #2: so do the integer and float reads" min="3" max="3">return \(float8\)\*\([a-z0-9]+ \*\)&amp;a0->field_0x8;</stringmatch>
+<stringmatch name="ARRAYFIELDCAST #3: no cast reads the decayed field" min="0" max="0">\*\([a-z0-9]+ \*\)a0->field_0x8</stringmatch>
+<stringmatch name="ARRAYFIELDCAST #4: a byte of the field is still an element" min="1" max="1">a0->field_0x8\[1\]</stringmatch>
+</decompilertest>
