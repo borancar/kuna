@@ -317,6 +317,11 @@ impl StackSolver {
                             }
                         }
                     }
+                    // (kuna) A return reached from this call pins the stack
+                    // after it; see [`crate::kuna_returndepth`].
+                    if let Some(depth) = callee.and_then(|fc_idx| data.get_call_specs(fc_idx).return_depth()) {
+                        self.guess.insert(0, StackEqn { var1: i as int4, var2: 0, rhs: depth });
+                    }
                     // Otherwise make a guess.  (kuna) upstream's constant 4
                     // assumes the callee pops nothing, which is wrong for the
                     // majority of calls under a spec whose default model is

@@ -1,7 +1,7 @@
 {
   "data_footer": [
-    4051,
-    4051
+    4054,
+    4054
   ],
   "passing": [
     "data:64-bit logical shift retains unsigned destination",
@@ -1795,6 +1795,9 @@
     "data:RETSYSREG MIPS #1: a Status write through v1 beside a computed v0 is not returned",
     "data:RETSYSREG MIPS #2: a prefetch, cache op or mtc2 on the high word keeps the pair",
     "data:RETSYSREG MIPS #3: st never returns the pair",
+    "data:RETURNDEPTH #1: the virtual call takes its five pushed arguments",
+    "data:RETURNDEPTH #2: the cookie is not a sixth",
+    "data:RETURNDEPTH #3: the float distance stays the third parameter",
     "data:RETURNPIECE #10: the high half is never returned by itself",
     "data:RETURNPIECE #1: both arguments of join_lo_hi stay and the return is eight bytes",
     "data:RETURNPIECE #2: the high half from the third argument keeps it",

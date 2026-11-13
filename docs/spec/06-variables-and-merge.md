@@ -3356,6 +3356,41 @@ counts are added to that base. A call that stores nothing, such as a call
 through a link register, keeps upstream's `4`; every x86-32 call measures `4`,
 so the 32-bit specs are unchanged.
 
+A call whose pop nothing else states can still be pinned by the `ret` it
+reaches (`decompiler/crates/kuna-decomp/src/p6_variables/kuna_returndepth.rs
+(record)`, always on). An x86 `ret` reads its return address at the stack
+pointer, so at that instruction the stack pointer is the one the function was
+entered with. Right after flow, while the raw p-code is whole, the walk goes
+back from each return, into every predecessor of a block (the stack depth is
+the same on each edge into it): a write of the stack pointer by a constant and
+a call whose pop is known (its callee's own `RET`, or a model that states it)
+move the depth by known amounts, a write by anything else ends the path, and
+so does a call to an address inside the function's own extent (a `call` used
+as a jump, which obfuscated code pairs with a `ret` that does not return). The
+first call whose pop is unknown gets the depth right after it recorded on its
+call spec only when it goes through a target computed from registers (a
+virtual call, a function pointer held in a register or a structure); a call
+through a constant slot, an import or a global function pointer, ends the path
+unrecorded, because the pinned depth makes the solved pop absorb every error of
+the guesses before the call and an import's push run is the better reading.
+For the same reason a function records nothing unless every call whose pop
+rests on the bare "pops nothing" guess, a direct call with no purge read or an
+indirect call through a computed target, is pinned: two virtual calls on one
+path would otherwise leave the first guessed and charge its arguments to the
+second. A call two paths reach at different depths records nothing.
+The solver puts that depth first among its guesses for the call's INDIRECT, so
+it applies only where the exact equations leave the stack open, and the call's
+pop is then solved rather than guessed. This is what settles an indirect call:
+every MSVC virtual call is `__thiscall`, so `push edi; push ebx; push eax;
+push -1; push -1; call edx` pops 0x14 bytes, and the guess that it pops none
+left every later stack reference 0x14 too low. `checkInputTrialUse` (§4.4)
+reads only the prototype's extrapop, because upstream found the effective one
+unreliable; for a call a return pins it reads the solved one, and the call's
+stack trials wait one pass for it (the input's maximum pass is raised to one).
+The trials below the pop are then the call's arguments and the slots above
+are not: the `/GS` cookie MSVC pushes in an EH prologue, right above the
+outgoing arguments, no longer becomes one more argument of such a call.
+
 
 Register assertion symbols participate in the merge's required-symbol identity
 checks before names are emitted. A usepoint-scoped register entry identifies a

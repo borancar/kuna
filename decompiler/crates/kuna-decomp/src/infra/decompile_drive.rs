@@ -951,6 +951,7 @@ fn generate_flow(arch: &mut Architecture, fd: Funcdata) -> KunaResult<Funcdata> 
     // C++ startProcessing also calls sortCallSpecs() (dominance order for the
     // call-spec list); now that qlst exists, sort it.
     data.sort_call_specs();
+    crate::p6_variables::kuna_returndepth::record(&mut data);
     Ok(data)
 }
 

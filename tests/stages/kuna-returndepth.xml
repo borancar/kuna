@@ -1,0 +1,38 @@
+<decompilertest>
+<binaryimage arch="x86:LE:32:default:windows">
+<!--
+    kuna issue testcase: the `ret` a call reaches pins the stack after it, so
+    an indirect call's pop is solved instead of guessed.
+
+    Issue:      kuna GH-ISSUE - MSVC's /GS cookie becomes an extra stack
+                argument of a virtual call.
+    Stage:      P6 variables - StackSolver's guesses (`p6_variables/
+                kuna_returndepth.rs`, `coreaction_stackptr.rs`) and the
+                call-site trial check (`p4_calls/funcdata_callsite.rs`).
+
+    Fixture: decompiler/crates/kuna-analysis/tests/fixtures/gscookie_pe_i386.exe
+    (VC8 /O2 /EHsc, notes in gscookie_pe_i386.txt). notify (0x401000) pushes
+    its /GS cookie in the prologue, right above the outgoing arguments, and
+    calls the virtual Sink::post(-1, -1, u->msg, who, flags), a __thiscall
+    callee that pops its five arguments. Before the fix the call took the
+    cookie as a sixth argument.
+-->
+<bytechunk space="ram" offset="0x100000" readonly="true">
+c3
+</bytechunk>
+<symbol space="ram" offset="0x100000" name="harness_stub"/>
+</binaryimage>
+<script>
+  <com>clear architecture</com>
+  <com>load file decompiler/crates/kuna-analysis/tests/fixtures/gscookie_pe_i386.exe</com>
+  <com>read symbols</com>
+  <com>function bounds 0x401000 as notify</com>
+  <com>load function notify</com>
+  <com>decompile</com>
+  <com>print C</com>
+  <com>quit</com>
+</script>
+<stringmatch name="RETURNDEPTH #1: the virtual call takes its five pushed arguments" min="1" max="1">\(0xffffffff,0xffffffff,v[0-9]+\[1\],v[0-9]+,v[0-9]+\);</stringmatch>
+<stringmatch name="RETURNDEPTH #2: the cookie is not a sixth" min="0" max="0">\(0xffffffff,0xffffffff,v[0-9]+\[1\],v[0-9]+,v[0-9]+,v[0-9]+\);</stringmatch>
+<stringmatch name="RETURNDEPTH #3: the float distance stays the third parameter" min="1" max="1">notify\(unsigned int \*a0,unsigned int a1,float4 a2\)</stringmatch>
+</decompilertest>

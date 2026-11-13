@@ -1,0 +1,16 @@
+Stripped PE32 i386 fixture for kuna_returndepth (tests/stages/kuna-returndepth.xml).
+
+gscookie_pe_i386.cpp is compiled by Visual C++ 2005 SP1 (`cl /O2 /EHsc /c`,
+output renamed gscookie_pe_i386_c.obj); gscookie_pe_i386_impl.cpp with
+`cl /O2 /EHsc /GS- /GR- /c` (output gscookie_pe_i386_impl.obj); the CRT
+pieces the first one references are stubbed in gscookie_pe_i386_crt.s.
+`notify` (0x401000) has an EH frame with the /GS cookie pushed in its
+prologue, right above the outgoing arguments; it calls the virtual Sink::post
+with five pushed arguments (a __thiscall callee that pops them), then
+destroys a local Name and checks the cookie.
+
+Build:
+  clang --target=i686-pc-windows-msvc -c gscookie_pe_i386_crt.s -o crt.obj
+  lld-link /nologo /entry:start /subsystem:console /nodefaultlib /base:0x400000 \
+    /fixed /safeseh:no /opt:noref /Brepro /out:gscookie_pe_i386.exe \
+    gscookie_pe_i386_c.obj gscookie_pe_i386_impl.obj crt.obj

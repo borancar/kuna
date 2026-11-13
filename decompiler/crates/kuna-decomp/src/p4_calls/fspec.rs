@@ -6809,6 +6809,9 @@ pub struct FuncCallSpecs {
     /// (kuna) The extrapop the direct callee's own returns state. See
     /// [`crate::p4_calls::kuna_calleepurge`].
     callee_purge: Option<int4>,
+    /// (kuna) The entry-relative stack depth right after this call, read back
+    /// from a return. See [`crate::p6_variables::kuna_returndepth`].
+    return_depth: Option<int4>,
 }
 
 impl FuncCallSpecs {
@@ -6846,6 +6849,7 @@ impl FuncCallSpecs {
             jump_target_storage: None,       // (kuna) tailcalljump
             plt_stub: None,                  // (kuna) pltlocal
             callee_purge: None,
+            return_depth: None,
         }
     }
 
@@ -6879,6 +6883,7 @@ impl FuncCallSpecs {
         res.jump_target_storage = self.jump_target_storage.clone();
         res.plt_stub = self.plt_stub.clone();
         res.callee_purge = self.callee_purge;
+        res.return_depth = self.return_depth;
         res
     }
 
@@ -7243,6 +7248,16 @@ impl FuncCallSpecs {
     /// Record the extrapop the direct callee's own returns state.
     pub fn set_callee_purge(&mut self, extrapop: Option<int4>) {
         self.callee_purge = extrapop;
+    }
+
+    /// The entry-relative stack depth right after this call, if a return pins it.
+    pub fn return_depth(&self) -> Option<int4> {
+        self.return_depth
+    }
+
+    /// Record the entry-relative stack depth right after this call.
+    pub fn set_return_depth(&mut self, depth: Option<int4>) {
+        self.return_depth = depth;
     }
 
     /// (kuna `tailcalljump`) Record the register that carried this tail call's

@@ -89,9 +89,31 @@ pub fn check_input_trial_use(idx: int4, data: &mut Funcdata, aliascheck: &mut Al
         callee_pop = data.get_call_specs(idx).get_model_extra_pop() == crate::fspec::EXTRAPOP_UNKNOWN;
         if callee_pop {
             expop = data.get_call_specs(idx).get_extra_pop();
+            // (kuna) A return pins this call's pop, so the solved one stands.
+            // See [`crate::p6_variables::kuna_returndepth`].
+            if expop == crate::fspec::EXTRAPOP_UNKNOWN && data.get_call_specs(idx).return_depth().is_some() {
+                expop = data.get_call_specs(idx).get_effective_extra_pop();
+            }
             if expop == crate::fspec::EXTRAPOP_UNKNOWN || expop <= 4 {
                 callee_pop = false;
             }
+        }
+    }
+
+    // (kuna) That pop is solved after the first pass, so the call's stack
+    // trials wait one pass for it.
+    let pop_pending = {
+        let fc = data.get_call_specs(idx);
+        fc.proto().has_model()
+            && fc.get_model_extra_pop() == crate::fspec::EXTRAPOP_UNKNOWN
+            && !callee_pop
+            && fc.return_depth().is_some()
+            && fc.active_input().get_num_passes() == 0
+    };
+    if pop_pending {
+        let active = data.get_call_specs_mut(idx).get_active_input();
+        if active.get_max_pass() == 0 {
+            active.set_max_pass(1);
         }
     }
 
@@ -128,6 +150,9 @@ pub fn check_input_trial_use(idx: int4, data: &mut Funcdata, aliascheck: &mut Al
             )
         };
         let is_spacebase = vn_space.get_type() == spacetype::IPTR_SPACEBASE;
+        if is_spacebase && pop_pending {
+            continue;
+        }
 
         if is_spacebase {
             // hasLocalAlias(vn): build the alias info lazily on first use.
