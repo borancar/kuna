@@ -1045,6 +1045,8 @@ pub struct ArchContext {
     /// (kuna `stackstruct`) Lay out an address-taken frame record as one structure.
     pub stack_struct: bool,
     /// (kuna) `devectorize` — re-roll a vectorized reduction into its scalar loop.
+    /// (kuna `impliedtest`) See `Architecture::kuna_impliedtest`.
+    pub kuna_impliedtest: bool,
     pub devectorize_reduction: bool,
     /// (kuna) `strlenscan` — collapse an inline `repnz scasb` length into `strlen`.
     pub strlen_scan: bool,
@@ -1625,6 +1627,7 @@ impl ArchContext {
             stack_alias_deadstore: false,
             stack_views: false, // stackviews (opt-in)
             libc_names: false, // libcnames; set from the Architecture
+            kuna_impliedtest: true,
             devectorize_reduction: false, // devectorize (opt-in default-off)
             strlen_scan: false, // strlenscan (live value copied from the Architecture)
             region_structure: false,     // regionstructure (opt-in default-off)

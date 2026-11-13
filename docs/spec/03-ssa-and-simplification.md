@@ -3168,6 +3168,26 @@ measured.
 `tests/stages/kuna-devectorize-effects.xml` keeps the vector arm of two
 hand-written sums whose exits disagree on a global store.
 
+**Implied cascade tests** (`option impliedtest`, default **on**) —
+`decompiler/crates/kuna-decomp/src/p3_dataflow/kuna_impliedtest.rs
+(ActionImpliedTest)`, in the fullloop tail right after `devectorize`. MSVC
+lowers a switch on `v` with one case `k` and every other value in `default`
+(`case 0` included) to `sub eax,0; je D; sub eax,k; jne D`, often with the zero
+kept in a register, and both tests survive into a structured `if ((v) && (v ==
+k))`. The action looks for a block A that goes to D when `v == a` and otherwise
+to a block B whose only predecessor is A, whose ops besides its branch are the
+arithmetic of its own test (COPY, add, subtract, extensions, SUBPIECE, the
+equality compares and BOOL_NEGATE, each read only inside B), and which goes to D
+when `v != b` for a constant `b != a`. Any value A sends to D also makes B go
+to D, so A's edge to D is removed and B is the cascade's head; each phi of D
+must carry the same value on A's and B's edges, or the removal would change
+the value D sees. B contains no load, because the removal makes B run on the
+path A used to skip. The cascade then prints as `if (v == k)`. The option
+ships on: it changes none of the 675 datatest assertions, and turning it off
+shows every compare the binary performs.
+`tests/stages/kuna-impliedtest.xml` runs the MSVC-shaped two-way switch in
+both passes (off: `(v2) && (v2 == 1)`; on: `v2 != 1`).
+
 **Inline string lengths** (`option strlenscan`, default **on**) —
 `decompiler/crates/kuna-decomp/src/p3_dataflow/kuna_strlenscan.rs
 (ActionStrlenScan)`, in the fullloop tail right after `devectorize`. gcc up to

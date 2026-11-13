@@ -1,0 +1,52 @@
+<decompilertest>
+<binaryimage arch="x86:LE:32:default:windows">
+<!--
+    kuna issue testcase: a compare-cascade test the next test on the same
+    value makes redundant is removed (`option impliedtest on|off`, default-ON).
+
+    Issue:      kuna GH-ISSUE - an MSVC two-way switch prints as
+                `if ((v1) && (v1 == 1))`.
+    Stage:      P3 dataflow - the fullloop edge-removal tail
+                (`p3_dataflow/kuna_impliedtest.rs`).
+    P0 assert:  `option impliedtest on|off`.
+
+    Fixture: decompiler/crates/kuna-analysis/tests/fixtures/impliedtest_pe_i386.exe
+    (source impliedtest_pe_i386.s, notes in impliedtest_pe_i386.txt). pick
+    (0x401000) tests `sub eax,ebx; je default; sub eax,1; jne default` with
+    zero kept in ebx, the shape MSVC /O2 gives `switch (r) { case 1: ...;
+    case 0: default: ... }`.
+
+    Pass 1 (`option impliedtest off`) reproduces the bug: the zero test
+    prints beside the equality it is implied by.
+    Pass 2 (shipped default) prints the one test, and both arms keep their
+    stores and the report call.
+-->
+<bytechunk space="ram" offset="0x100000" readonly="true">
+c3
+</bytechunk>
+<symbol space="ram" offset="0x100000" name="harness_stub"/>
+</binaryimage>
+<script>
+  <com>clear architecture</com>
+  <com>load file decompiler/crates/kuna-analysis/tests/fixtures/impliedtest_pe_i386.exe</com>
+  <com>option impliedtest off</com>
+  <com>read symbols</com>
+  <com>function bounds 0x401000 as pick</com>
+  <com>load function pick</com>
+  <com>decompile</com>
+  <com>print C</com>
+  <com>clear architecture</com>
+  <com>load file decompiler/crates/kuna-analysis/tests/fixtures/impliedtest_pe_i386.exe</com>
+  <com>read symbols</com>
+  <com>function bounds 0x401000 as pick</com>
+  <com>load function pick</com>
+  <com>decompile</com>
+  <com>print C</com>
+  <com>quit</com>
+</script>
+<stringmatch name="IMPLIEDTEST #1: off, the zero test prints beside the equality" min="1" max="1">if \(\(v[0-9]+\) &amp;&amp; \(v[0-9]+ == 1\)\)</stringmatch>
+<stringmatch name="IMPLIEDTEST #2: on, the cascade is one test" min="1" max="1">if \(v[0-9]+ != 1\)</stringmatch>
+<stringmatch name="IMPLIEDTEST #3: both passes keep the case 1 store" min="2" max="2">\[1\] = 0;</stringmatch>
+<stringmatch name="IMPLIEDTEST #4: both passes keep the default store" min="2" max="2">\[1\] = 0xf;</stringmatch>
+<stringmatch name="IMPLIEDTEST #5: both passes report through one call" min="2" max="2">sub_401050\(v[0-9]+,v[0-9]+\);</stringmatch>
+</decompilertest>

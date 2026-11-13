@@ -18,6 +18,8 @@ Three tiers:
 | a field access like f->_flags with no layout anywhere in the output | [`structdefs`](#structdefs) |
 | you have to run decompile-project just to read the .h for one function's struct | [`structdefs`](#structdefs) |
 | a synthesized struct_N appears in a parameter type with no definition | [`structdefs`](#structdefs) |
+| a condition tests a value for non-zero and then for equality with a non-zero constant, as in if ((v) && (v == 1)) | [`impliedtest`](#impliedtest) |
+| a two-way switch on a call result prints as an if with a redundant first test | [`impliedtest`](#impliedtest) |
 | a loop summing an array prints as eight lane accumulators added into one total after the loop | [`devectorize`](#devectorize) |
 | a vectorised reduction is followed by a second copy of the loop over the remainder | [`devectorize`](#devectorize) |
 | an array sum is guarded by if (8 <= length) with a stride-eight do-while behind it | [`devectorize`](#devectorize) |
@@ -806,6 +808,14 @@ The control surface: each of these can make output worse on the wrong source sha
 - **When to flip:** Flip on when you are reading a function whose arguments are pointers to composites and want the layout in front of you -- `structsynth`'s synthesized `struct_N`, a DWARF struct on an unstripped binary, `libctypes`' opaque `FILE`/`DIR` shells -- instead of opening the `decompile-project` header to find it. Default OFF: it is a presentation default, and a preamble in front of every function is noise for a caller diffing bodies or feeding one function to a matcher. It changes nothing but the text above the function -- the body, its line contents and every recovered type are identical either way -- but it DOES move line numbers, so a consumer pinning a line number should read `line_mappings` rather than assume the first line is the signature. The preamble is documentation, not a compilable unit: a padding member spelled `undefined1` needs the export's recompile prelude to compile, which is one more reason the project surface keeps the definitions in the header.
 - **Where / provenance:** P9/type-definition-preamble · angr · presentation-default · kuna-structdefs
 - **Example:** `option structdefs on`
+
+### `impliedtest` -- on | off, default `on`
+
+- **Symptoms:** a condition tests a value for non-zero and then for equality with a non-zero constant, as in if ((v) && (v == 1)); a two-way switch on a call result prints as an if with a redundant first test.
+- **What it does:** Remove a compare-cascade test the next test on the same value makes redundant. MSVC lowers a switch on v with one case k and the other values in default (case 0 included) to `sub eax,0; je D; sub eax,k; jne D`, which prints as `if ((v) && (v == k))`. When block A goes to D on v == a and otherwise to B, B has A as its only predecessor, holds only the arithmetic of its own test (no load, no store, nothing read outside B) and goes to D on v != b for a constant b != a, every value A sends to D reaches D through B as well, so A's edge to D is removed, provided each phi in D carries the same value on both edges. The cascade then prints as `if (v == k)`.
+- **When to flip:** On by default. Flip off to see every compare the binary performs, for instance when matching the decompiled cascade against the disassembly test by test.
+- **Where / provenance:** P3/simplification-quiescence · kuna · structure-recovery · msvc-two-way-switch
+- **Example:** `option impliedtest off`
 
 ### `devectorize` -- on | off, default `off`
 

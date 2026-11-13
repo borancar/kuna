@@ -63,6 +63,7 @@ pub mod kuna_x87truncate;
 pub mod kuna_cancelbytearithmetic;
 pub mod kuna_wideslice;
 pub mod kuna_devectorize;
+pub mod kuna_impliedtest;
 pub mod kuna_strlenscan;
 pub mod kuna_narrowload; // (kuna) a narrow LOAD keeps its own width
 pub mod kuna_regnarrow;

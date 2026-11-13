@@ -1,0 +1,9 @@
+Stripped PE32 i386 fixture for kuna_impliedtest (tests/stages/kuna-impliedtest.xml).
+
+impliedtest_pe_i386.s is the MSVC /O2 shape of a two-way switch with zero kept
+in ebx: `pick` (0x401000) tests `sub eax,ebx; je default; sub eax,1; jne default`.
+
+Build:
+  clang --target=i686-pc-windows-msvc -c impliedtest_pe_i386.s -o impliedtest.obj
+  lld-link /nologo /entry:start /subsystem:console /nodefaultlib /base:0x400000 \
+    /fixed /safeseh:no /opt:noref /Brepro /out:impliedtest_pe_i386.exe impliedtest.obj

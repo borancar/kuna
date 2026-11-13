@@ -1537,6 +1537,28 @@ tier = "core"
 symptoms = "full-line WARNING banner comments clutter the output|warning text wanted inline at the end of the statement it describes|terse warning slugs unwanted; full upstream warning text needed|warning style needs to match upstream ghidra for diffing"
 
 [[settable]]
+option = "impliedtest"
+values = "on|off"
+default = "on"
+destructive = false
+phase = "P3"
+subphase = "simplification-quiescence"
+strength = "HARD"
+rewind = "P3"
+issue = "msvc-two-way-switch"
+summary = "Remove a compare-cascade test the next test on the same value makes redundant. MSVC lowers a switch on v with one case k and the other values in default (case 0 included) to `sub eax,0; je D; sub eax,k; jne D`, which prints as `if ((v) && (v == k))`. When block A goes to D on v == a and otherwise to B, B has A as its only predecessor, holds only the arithmetic of its own test (no load, no store, nothing read outside B) and goes to D on v != b for a constant b != a, every value A sends to D reaches D through B as well, so A's edge to D is removed, provided each phi in D carries the same value on both edges. The cascade then prints as `if (v == k)`."
+use_when = "On by default. Flip off to see every compare the binary performs, for instance when matching the decompiled cascade against the disassembly test by test."
+example = "option impliedtest off"
+live_field = "kuna_impliedtest"
+live_true = "on"
+live_false = "off"
+source_decompiler = "kuna"
+inspiration = "VC8 /O2 two-way switch with zero kept in ebx (sub eax,ebx; je; sub eax,1; jne); the edge-removal pair of kuna_devectorize / kuna_securitycheck"
+change_kind = "structure-recovery"
+tier = "transform"
+symptoms = "a condition tests a value for non-zero and then for equality with a non-zero constant, as in if ((v) && (v == 1))|a two-way switch on a call result prints as an if with a redundant first test"
+
+[[settable]]
 option = "devectorize"
 values = "on|off"
 default = "off"

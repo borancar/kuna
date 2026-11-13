@@ -425,6 +425,7 @@ kuna_options! { self, p1;
         self.array_size = val;
         Ok(msg)
     },
+    "impliedtest" => on_off!(kuna_impliedtest, "Redundant cascade test removal"),
     "devectorize" => on_off!(devectorize_reduction, "Vectorized reduction re-roll"),
     "strlenscan" => on_off!(strlen_scan, "inline repnz scasb string length as strlen"),
     "regionstructure" => {

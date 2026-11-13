@@ -126,7 +126,7 @@ const PURE: &[OpCode] = &[
     CPUI_CAST,
 ];
 
-fn op(data: &Funcdata, id: OpId) -> &PcodeOp {
+pub(crate) fn op(data: &Funcdata, id: OpId) -> &PcodeOp {
     data.obank().get(id).expect("devectorize: op")
 }
 
@@ -134,18 +134,18 @@ fn size(data: &Funcdata, v: VarnodeId) -> i64 {
     data.vbank().get(v).expect("devectorize: varnode").get_size() as i64
 }
 
-fn constant(data: &Funcdata, v: VarnodeId) -> Option<u64> {
+pub(crate) fn constant(data: &Funcdata, v: VarnodeId) -> Option<u64> {
     let node = data.vbank().get(v)?;
     node.is_constant().then(|| node.get_offset())
 }
 
-fn def(data: &Funcdata, v: VarnodeId) -> Option<(OpId, &PcodeOp)> {
+pub(crate) fn def(data: &Funcdata, v: VarnodeId) -> Option<(OpId, &PcodeOp)> {
     let id = data.vbank().get(v)?.get_def()?;
     Some((id, op(data, id)))
 }
 
 /// `v` with its COPY (and, when `zext`, INT_ZEXT) wrappers peeled: the same value.
-fn strip(data: &Funcdata, mut v: VarnodeId, zext: bool) -> VarnodeId {
+pub(crate) fn strip(data: &Funcdata, mut v: VarnodeId, zext: bool) -> VarnodeId {
     while let Some((_, o)) = def(data, v) {
         if o.code() != CPUI_COPY && !(zext && o.code() == CPUI_INT_ZEXT) {
             break;
@@ -164,7 +164,7 @@ fn same(data: &Funcdata, a: VarnodeId, b: VarnodeId) -> bool {
     a == b || matches!((constant(data, a), constant(data, b)), (Some(x), Some(y)) if x == y)
 }
 
-fn basic(data: &Funcdata, b: BlockId) -> bool {
+pub(crate) fn basic(data: &Funcdata, b: BlockId) -> bool {
     matches!(data.bblocks_ref().block(b).kind(), BlockKind::Basic(_))
 }
 
@@ -198,7 +198,7 @@ fn operand_besides(o: &PcodeOp, v: VarnodeId) -> Option<VarnodeId> {
 }
 
 /// The successors a CBRANCH block takes on a true and on a false condition.
-fn taken(data: &Funcdata, b: BlockId) -> Option<(BlockId, BlockId)> {
+pub(crate) fn taken(data: &Funcdata, b: BlockId) -> Option<(BlockId, BlockId)> {
     let fb = data.bblocks_ref().block(b);
     if fb.size_out() != 2 {
         return None;

@@ -856,6 +856,9 @@ pub struct Architecture {
     /// one accumulator per lane, fold, scalar remainder loop) into its scalar
     /// loop (option `devectorize`, opt-in default-off).  See
     /// [`crate::p3_dataflow::kuna_devectorize`].
+    /// (kuna `impliedtest`) Remove a compare-cascade test the next test makes
+    /// redundant.
+    pub kuna_impliedtest: bool,
     pub devectorize_reduction: bool,
     /// (kuna) Collapse an inline `repnz scasb` string length into `strlen`
     /// (option `strlenscan`).  See [`crate::p3_dataflow::kuna_strlenscan`].
@@ -2314,6 +2317,7 @@ impl Architecture {
             stack_struct: false,
             array_extent: 0, // (kuna) option arrayextent; reset_defaults sets the shipped default
             array_size: 0, // (kuna) option arraysize; reset_defaults sets the shipped default
+            kuna_impliedtest: true,
             devectorize_reduction: false, // (kuna) option devectorize (opt-in default-off)
             strlen_scan: false, // (kuna) option strlenscan; reset_defaults sets the shipped default
             region_structure: true,
@@ -3367,6 +3371,7 @@ impl Architecture {
         ctx.stack_alias_deadstore = self.stack_alias_deadstore; // stackalias
         ctx.stack_views = self.stack_views;
         ctx.libc_names = self.libc_names; // libcnames
+        ctx.kuna_impliedtest = self.kuna_impliedtest; // impliedtest
         ctx.devectorize_reduction = self.devectorize_reduction; // devectorize
         ctx.strlen_scan = self.strlen_scan; // strlenscan
         ctx.region_structure = self.region_structure; // regionstructure

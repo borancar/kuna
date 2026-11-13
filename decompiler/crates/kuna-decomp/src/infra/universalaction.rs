@@ -701,6 +701,10 @@ pub fn universal_sched(
             // mainloop's dead-code passes over the reduced graph before P8
             // structures it.
             act!(Box::new(crate::kuna_devectorize::ActionDevectorize::new(false, "returnsplit"))),
+            // (kuna) impliedtest (option `impliedtest`, default-ON): remove a
+            // compare-cascade test the next test on the same value makes
+            // redundant, with the edge-removal passes above.
+            act!(Box::new(crate::kuna_impliedtest::ActionImpliedTest::new(false, "returnsplit"))),
             // (kuna) strlenscan (option `strlenscan`): collapse the loop SLEIGH
             // lifts an inline `repnz scasb` string length to into `strlen`, by
             // giving the loop its final values and removing its back edge and
